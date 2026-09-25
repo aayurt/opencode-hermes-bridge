@@ -20,18 +20,22 @@ echo "==> Installing /oc slash plugin to $HERMES_DIR/plugins/opencode-slash/..."
 cp "$REPO_DIR/plugins/opencode-slash/plugin.yaml" "$HERMES_DIR/plugins/opencode-slash/"
 cp "$REPO_DIR/plugins/opencode-slash/__init__.py" "$HERMES_DIR/plugins/opencode-slash/"
 
-# 3. Configure Hermes
-echo "==> Configuring Hermes provider and plugin..."
-hermes plugins enable opencode-slash || true
+# 3. Configure Hermes (if hermes is installed)
+if command -v hermes >/dev/null 2>&1; then
+  echo "==> Configuring Hermes provider and plugin..."
+  hermes plugins enable opencode-slash || true
 
-hermes config set providers.opencode-direct.name "opencode-direct"
-hermes config set providers.opencode-direct.base_url "http://127.0.0.1:4098/v1"
-hermes config set providers.opencode-direct.api_mode "chat_completions"
-hermes config set providers.opencode-direct.key "dummy"
-hermes config set providers.opencode-direct.models '["opencode"]'
-hermes config set model.aliases.opencode "opencode-direct/opencode"
+  hermes config set providers.opencode-direct.name "opencode-direct" || true
+  hermes config set providers.opencode-direct.base_url "http://127.0.0.1:4098/v1" || true
+  hermes config set providers.opencode-direct.api_mode "chat_completions" || true
+  hermes config set providers.opencode-direct.key "dummy" || true
+  hermes config set providers.opencode-direct.models '["opencode"]' || true
+  hermes config set model.aliases.opencode "opencode-direct/opencode" || true
+else
+  echo "==> Hermes CLI not detected in PATH. Skipping Hermes config step."
+fi
 
-# 4. Setup LaunchAgents (macOS)
+# 4. Setup Services
 if [[ "$(uname)" == "Darwin" ]]; then
   echo "==> Setting up macOS launchd daemons..."
   mkdir -p "$HOME/Library/LaunchAgents"
@@ -45,6 +49,19 @@ if [[ "$(uname)" == "Darwin" ]]; then
 
   launchctl unload "$HOME/Library/LaunchAgents/com.user.opencode-proxy.plist" 2>/dev/null || true
   launchctl load "$HOME/Library/LaunchAgents/com.user.opencode-proxy.plist"
+elif [[ "$(uname)" == "Linux" ]]; then
+  echo "==> Setting up Linux systemd daemons..."
+  SUDO=""
+  if [[ "$EUID" -ne 0 ]]; then
+    SUDO="sudo"
+  fi
+
+  $SUDO cp "$REPO_DIR/systemd/opencode-serve.service" /etc/systemd/system/
+  $SUDO cp "$REPO_DIR/systemd/opencode-proxy.service" /etc/systemd/system/
+  
+  $SUDO systemctl daemon-reload
+  $SUDO systemctl enable --now opencode-serve
+  $SUDO systemctl enable --now opencode-proxy
 fi
 
 echo "==> Installation complete! Ready to use:"

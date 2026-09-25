@@ -32,7 +32,9 @@ OPENCODE_BIN = (
     or os.path.expanduser("~/.local/bin/opencode")
 )
 SERVER_URL = os.environ.get("OPENCODE_SERVER_URL", "http://127.0.0.1:4097")
+HOST = os.environ.get("OPENCODE_PROXY_HOST", "127.0.0.1")
 PORT = int(os.environ.get("OPENCODE_PROXY_PORT", "4098"))
+API_KEY = os.environ.get("OPENCODE_PROXY_API_KEY", "").strip()
 
 # Map conversation_key -> opencode_session_id
 _SESSION_CACHE: dict[str, str] = {}
@@ -175,6 +177,13 @@ class OpenCodeProxyHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "Not found"})
 
     def do_POST(self):
+        if API_KEY:
+            auth_header = self.headers.get("Authorization", "")
+            expected = f"Bearer {API_KEY}"
+            if auth_header != expected:
+                self._send_json(401, {"error": "Unauthorized: invalid or missing API key"})
+                return
+
         path = self.path.split("?")[0]
         if path == "/reset":
             _SESSION_CACHE.clear()
@@ -283,8 +292,8 @@ class OpenCodeProxyHandler(BaseHTTPRequestHandler):
 
 
 def main():
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), OpenCodeProxyHandler)
-    logger.info("OpenCode OpenAI proxy listening on http://127.0.0.1:%d", PORT)
+    server = ThreadingHTTPServer((HOST, PORT), OpenCodeProxyHandler)
+    logger.info("OpenCode OpenAI proxy listening on http://%s:%d", HOST, PORT)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

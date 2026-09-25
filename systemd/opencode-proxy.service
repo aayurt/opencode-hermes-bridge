@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenCode OpenAI-Compatible Proxy Server
+After=network.target opencode-serve.service
+Wants=opencode-serve.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/opencode-hermes-bridge
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=OPENCODE_PROXY_PORT=4098
+Environment=OPENCODE_SERVER_URL=http://127.0.0.1:4097
+ExecStart=/usr/bin/python3 /opt/opencode-hermes-bridge/scripts/opencode-openai-proxy.py
+Restart=always
+RestartSec=3
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
