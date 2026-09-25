@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.opencode-proxy</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/aayurtshrestha/.hermes/profiles/mind-slayer/scripts/opencode-openai-proxy.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/aayurtshrestha/.hermes/profiles/mind-slayer</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/aayurtshrestha/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/aayurtshrestha/.hermes/profiles/mind-slayer/logs/opencode-proxy.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/aayurtshrestha/.hermes/profiles/mind-slayer/logs/opencode-proxy.error.log</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>

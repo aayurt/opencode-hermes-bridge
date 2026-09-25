@@ -1,0 +1,5 @@
+name: opencode-slash
+version: 0.1.0
+description: /oc command to query OpenCode directly without LLM overhead
+author: mind-slayer
+kind: backend
