@@ -14,7 +14,9 @@ Enables Hermes to delegate generation and coding tasks directly to OpenCode whil
 * **Dual Invocation Modes:**
   1. **OpenAI Provider Mode:** Select OpenCode as the active model with `/model opencode`.
   2. **Native Slash Command:** Run one-off questions anytime with `/oc <prompt>`.
-* **Zero-Downtime Daemon:** Managed via macOS `launchd` for automatic startup on boot and auto-restart on crash.
+* **Cross-Platform Daemon Management:**
+  * **macOS:** Handled via `launchd` (`com.user.opencode-serve`, `com.user.opencode-proxy`).
+  * **Linux / VPS:** Handled via `systemd` (`opencode-serve.service`, `opencode-proxy.service`).
 
 ---
 
@@ -46,21 +48,22 @@ User Prompt (Hermes Desktop / TUI / Telegram)
 
 ## Prerequisites
 
-1. **OpenCode CLI** installed and authenticated (v1.18.0 or newer):
+1. **Node.js & OpenCode CLI** (v1.18.0 or newer):
    ```bash
+   npm install -g opencode-ai
    opencode --version
    ```
-2. **Hermes Agent** installed:
+2. **Python 3.10+**
+3. **Hermes Agent** (optional if using as an OpenAI-compatible server for other tools):
    ```bash
    hermes --version
    ```
-3. **Python 3.10+** (Python 3.14 recommended on macOS with Apple Silicon).
 
 ---
 
 ## Quick Installation
 
-Run the automated installer:
+Run the automated installer on macOS or Linux (including Ubuntu/Debian VPS):
 
 ```bash
 git clone https://github.com/aayurt/opencode-hermes-bridge.git
@@ -69,11 +72,10 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The script will:
-1. Copy the proxy service to `~/.hermes/profiles/<profile>/scripts/`.
-2. Register and enable the `opencode-slash` Hermes plugin.
-3. Configure Hermes provider `opencode-direct` and alias `opencode`.
-4. Deploy and start background `launchd` daemons on ports `4097` (warm engine) and `4098` (OpenAI proxy).
+### What `install.sh` Does:
+* **macOS:** Installs `launchd` services to `~/Library/LaunchAgents/` and loads them immediately.
+* **Linux (systemd):** Installs unit files to `/etc/systemd/system/`, runs `daemon-reload`, and enables `opencode-serve` and `opencode-proxy`.
+* **Hermes Config:** If `hermes` is in `PATH`, registers the `/oc` plugin and `opencode-direct` model provider.
 
 ---
 
@@ -120,12 +122,25 @@ curl http://127.0.0.1:4098/v1/chat/completions \
 
 ---
 
-## Service Management (macOS)
+## Service Management
 
-Both services are managed via `launchd`:
-
+### Linux (systemd)
 ```bash
-# Check status / logs
+# Check service status
+systemctl status opencode-serve
+systemctl status opencode-proxy
+
+# View live logs
+journalctl -u opencode-proxy -f
+journalctl -u opencode-serve -f
+
+# Restart services
+sudo systemctl restart opencode-serve opencode-proxy
+```
+
+### macOS (launchd)
+```bash
+# Check logs
 tail -f ~/.hermes/profiles/mind-slayer/logs/opencode-proxy.log
 tail -f ~/.hermes/profiles/mind-slayer/logs/opencode-serve.log
 
@@ -136,6 +151,18 @@ launchctl load ~/Library/LaunchAgents/com.user.opencode-serve.plist
 launchctl unload ~/Library/LaunchAgents/com.user.opencode-proxy.plist
 launchctl load ~/Library/LaunchAgents/com.user.opencode-proxy.plist
 ```
+
+---
+
+## Remote Access (SSH Tunneling)
+
+To forward the VPS OpenCode service to your local machine:
+
+```bash
+ssh -N -L 14098:127.0.0.1:4098 SuperVPS
+```
+
+Then query the VPS OpenCode instance locally at `http://127.0.0.1:14098/v1`.
 
 ---
 
